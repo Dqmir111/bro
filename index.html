@@ -3,238 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Общий Чат - Локальный Симулятор</title>
+    <title>Общий Чат на Firebase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS для стилизации */
+        /* Переопределение шрифта и базовых стилей Tailwind */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-        }
-
-        .chat-container {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 600px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            max-height: 90vh;
-        }
-
-        .header {
-            background-color: #007bff;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 1.2em;
-        }
-
-        .nickname-setup {
             padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid #eee;
         }
 
-        .nickname-setup input, .nickname-setup button {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+        /* Установка максимальной высоты для мобильных устройств */
+        .chat-container {
+            height: 90vh;
+            max-width: 700px;
+            width: 100%;
         }
 
-        .nickname-setup button {
-            background-color: #28a745;
-            color: white;
-            cursor: pointer;
-            border: none;
-            transition: background-color 0.3s;
+        /* Стилизация полосы прокрутки */
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
         }
-
-        .nickname-setup button:hover {
-            background-color: #218838;
+        #chat-messages::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1; /* gray-300 */
+            border-radius: 4px;
         }
-
-        #chat-messages {
-            flex-grow: 1;
-            padding: 15px;
-            overflow-y: auto;
-            max-height: 400px; /* Ограничиваем высоту области сообщений */
-        }
-
-        .message-input {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .message-input input {
-            flex-grow: 1;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            margin-right: 10px;
-        }
-
-        .message-input button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .message-input button:hover {
-            background-color: #0056b3;
-        }
-
-        /* Стиль для отдельного сообщения */
-        .message {
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .nickname {
-            font-weight: bold;
-            color: #007bff;
-            margin-right: 5px;
-        }
-
-        .timestamp {
-            font-size: 0.8em;
-            color: #999;
-            margin-left: 5px;
-        }
-
-        .hidden {
-            display: none;
+        #chat-messages::-webkit-scrollbar-track {
+            background: #f7fafc; /* gray-50 */
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-50">
 
-    <div class="chat-container">
-        <div class="header">Локальный Чат</div>
-
-        <div class="nickname-setup" id="nickname-section">
-            <input type="text" id="nickname-input" placeholder="Введите ваш ник" maxlength="20">
-            <button onclick="setNickname()">Войти в чат</button>
+    <div class="chat-container bg-white shadow-2xl rounded-xl flex flex-col overflow-hidden">
+        
+        <!-- Header -->
+        <div class="p-4 bg-indigo-600 text-white flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-bold">Общий Чат (Firebase)</h1>
+            <div id="user-info" class="text-sm opacity-90">Загрузка...</div>
         </div>
 
-        <div id="chat-content" class="hidden">
-            <div id="chat-messages">
-                </div>
+        <!-- Nickname Setup -->
+        <div class="nickname-setup p-6 text-center" id="nickname-section">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Выберите Ник</h2>
+            <div id="loading-spinner" class="text-indigo-500 font-medium mb-4 hidden">Подключение к Firebase...</div>
+            <input type="text" id="nickname-input" placeholder="Введите ваш ник (до 20 символов)" maxlength="20" class="w-full p-3 border-2 border-indigo-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4">
+            <button onclick="setNickname()" id="nickname-button" class="w-full py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition duration-200 shadow-md disabled:opacity-50" disabled>
+                Войти в Чат
+            </button>
+        </div>
+
+        <!-- Chat Content -->
+        <div id="chat-content" class="flex flex-col flex-grow hidden">
+            <!-- Messages Area -->
+            <div id="chat-messages" class="flex-grow overflow-y-auto p-4 space-y-3 bg-gray-50">
+                <!-- Сообщения будут добавлены сюда -->
+            </div>
     
-            <div class="message-input">
-                <input type="text" id="message-input" placeholder="Напишите сообщение..." disabled>
-                <button onclick="sendMessage()" id="send-button" disabled>Отправить</button>
+            <!-- Input Form -->
+            <div class="message-input p-4 border-t border-gray-200 bg-white">
+                <div class="flex space-x-3">
+                    <input type="text" id="message-input" placeholder="Введите сообщение..." class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button onclick="sendMessage()" id="send-button" class="px-6 py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition duration-200 shadow-md">
+                        Отправить
+                    </button>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <script>
-        // JavaScript для логики чата
+    <!-- Firebase SDK Imports (Modular version) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-lite.js";
+
+        // setLogLevel('Debug'); // Раскомментировать для отладки
+
+        // Глобальные переменные платформы
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let db, auth, userId = null;
+        let isAuthReady = false;
         let userNickname = '';
+
+        // DOM Elements
         const nicknameSection = document.getElementById('nickname-section');
         const chatContent = document.getElementById('chat-content');
         const nicknameInput = document.getElementById('nickname-input');
+        const nicknameButton = document.getElementById('nickname-button');
         const chatMessages = document.getElementById('chat-messages');
         const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
+        const userInfoDisplay = document.getElementById('user-info');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        // Путь к публичной коллекции сообщений
+        const MESSAGES_COLLECTION_PATH = `/artifacts/${appId}/public/data/chat_messages`;
 
         /**
-         * Устанавливает ник пользователя.
+         * 1. Инициализация Firebase и Аутентификация
          */
-        function setNickname() {
+        try {
+            loadingSpinner.classList.remove('hidden');
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            // Наблюдатель за состоянием аутентификации
+            onAuthStateChanged(auth, async (user) => {
+                loadingSpinner.classList.add('hidden');
+                
+                if (user) {
+                    userId = user.uid;
+                    isAuthReady = true;
+                    userInfoDisplay.innerHTML = `Auth ID: <span class="font-mono text-xs">${userId}</span>`;
+                    
+                    // Активировать кнопку ника после успешной аутентификации
+                    nicknameButton.disabled = false;
+                    console.log("Успешная аутентификация. User ID:", userId);
+
+                    // Если ник уже установлен (напр. после setNickname), начать прослушивание чата
+                    if (userNickname) {
+                        initChatListener();
+                    }
+                } else {
+                    // Если токен доступен, используем его для входа
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        // Иначе анонимный вход
+                        await signInAnonymously(auth);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Ошибка инициализации Firebase:", error);
+            userInfoDisplay.textContent = 'Ошибка подключения.';
+        }
+
+        /**
+         * 2. Устанавливает ник и переключает на интерфейс чата.
+         */
+        window.setNickname = function() {
             const nickname = nicknameInput.value.trim();
             if (nickname) {
                 userNickname = nickname;
                 nicknameSection.classList.add('hidden');
                 chatContent.classList.remove('hidden');
-                messageInput.disabled = false;
-                sendButton.disabled = false;
-                messageInput.focus();
                 
-                // Приветственное сообщение
-                addMessage('Система', `Добро пожаловать, **${userNickname}**! Чат активен.`, true);
+                if (isAuthReady) {
+                    initChatListener();
+                }
+
+                // Приветственное сообщение (локальное)
+                addLocalMessage('Система', `Вы вошли как: ${userNickname}. Начинайте общаться!`);
             } else {
                 alert('Пожалуйста, введите ник.');
             }
         }
 
         /**
-         * Отправляет сообщение в чат.
+         * 3. Добавляет сообщение в Firestore.
          */
-        function sendMessage() {
-            const messageText = messageInput.value.trim();
+        window.sendMessage = async function() {
+            const text = messageInput.value.trim();
 
-            if (messageText && userNickname) {
-                addMessage(userNickname, messageText, false);
+            if (!text || !userNickname || !userId) {
+                console.warn("Сообщение или ник отсутствует, или пользователь не авторизован.");
+                return;
+            }
+
+            try {
+                // Добавление документа в коллекцию
+                await addDoc(collection(db, MESSAGES_COLLECTION_PATH), {
+                    userId: userId,
+                    nickname: userNickname,
+                    text: text,
+                    timestamp: serverTimestamp() // Время на сервере
+                });
+
                 messageInput.value = ''; // Очистка поля ввода
-                messageInput.focus(); // Возвращаем фокус
+            } catch (e) {
+                addLocalMessage('Ошибка', `Не удалось отправить сообщение: ${e.message}`);
+                console.error("Ошибка при добавлении документа: ", e);
             }
         }
 
         /**
-         * Добавляет сообщение в область чата.
-         * @param {string} sender - Имя отправителя.
-         * @param {string} text - Текст сообщения.
-         * @param {boolean} isSystem - Является ли сообщение системным.
+         * 4. Прослушивание Firestore в реальном времени.
          */
-        function addMessage(sender, text, isSystem) {
+        function initChatListener() {
+            // Создаем запрос: сортируем по времени и получаем все документы
+            const messagesQuery = query(collection(db, MESSAGES_COLLECTION_PATH));
+            
+            // onSnapshot слушает изменения в реальном времени
+            onSnapshot(messagesQuery, (snapshot) => {
+                // Очищаем существующие сообщения перед обновлением
+                chatMessages.innerHTML = ''; 
+                
+                // Преобразуем документы в массив, сортируем по времени
+                const messages = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.timestamp) { // Проверяем наличие временной метки
+                        messages.push({
+                            ...data,
+                            id: doc.id,
+                            timeMs: data.timestamp.toMillis()
+                        });
+                    }
+                });
+
+                // Сортировка по времени (самое старое - сверху)
+                messages.sort((a, b) => a.timeMs - b.timeMs);
+
+                // Отображение сообщений
+                messages.forEach(msg => {
+                    addRemoteMessage(msg.nickname, msg.text, msg.timestamp, msg.userId === userId);
+                });
+            }, (error) => {
+                console.error("Ошибка при прослушивании Firestore:", error);
+                addLocalMessage('Ошибка', 'Не удалось загрузить сообщения в реальном времени.');
+            });
+        }
+        
+        /**
+         * 5. Отображает сообщения из Firestore.
+         */
+        function addRemoteMessage(sender, text, timestamp, isOwn) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
+            
+            // Классы для общего стиля сообщения
+            messageElement.classList.add('flex', 'max-w-xs', 'md:max-w-md', 'break-words', 'p-3', 'rounded-xl', 'shadow-sm', 'text-sm');
 
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-            let contentHTML;
-            if (isSystem) {
-                // Системное сообщение
-                contentHTML = `
-                    <span class="timestamp">${timeString}</span>
-                    <span style="color: #6c757d; font-style: italic;">[${sender}] ${text}</span>
-                `;
+            // Классы для стиля "моего" сообщения (справа)
+            if (isOwn) {
+                messageElement.classList.add('bg-indigo-500', 'text-white', 'self-end', 'rounded-br-none', 'ml-auto');
             } else {
-                // Обычное сообщение
-                contentHTML = `
-                    <span class="nickname">${sender}:</span>
-                    ${text}
-                    <span class="timestamp">${timeString}</span>
-                `;
+                // Классы для стиля "чужого" сообщения (слева)
+                messageElement.classList.add('bg-white', 'text-gray-800', 'border', 'border-gray-200', 'self-start', 'rounded-tl-none');
             }
+
+            const timeString = timestamp ? 
+                new Date(timestamp.toMillis()).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : 
+                '...'; // Если время еще не установлено (отправка)
+
+            let contentHTML = `
+                ${!isOwn ? `<span class="font-bold mr-2 ${isOwn ? 'text-white' : 'text-indigo-600'}">${sender}:</span>` : ''}
+                <div class="flex flex-col">
+                    <span>${text}</span>
+                    <span class="text-xs ${isOwn ? 'text-indigo-200' : 'text-gray-400'} self-end mt-1">${timeString}</span>
+                </div>
+            `;
             
             messageElement.innerHTML = contentHTML;
             chatMessages.appendChild(messageElement);
 
-            // Прокрутка вниз к последнему сообщению
+            // Автоматическая прокрутка вниз
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // Обработчик нажатия Enter для ввода ника
-        nicknameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                setNickname();
-            }
-        });
+        /**
+         * 6. Отображает локальные/системные сообщения.
+         */
+        function addLocalMessage(sender, text) {
+            const messageElement = document.createElement('div');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            
+            messageElement.classList.add('text-center', 'text-xs', 'text-gray-500', 'py-1', 'italic');
+            messageElement.innerHTML = `[${timeString}] ${sender}: ${text}`;
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
 
-        // Обработчик нажатия Enter для отправки сообщения
-        messageInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
+        // Обработчики нажатия Enter
+        nicknameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') setNickname();
+        });
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
         });
 
     </script>
-
 </body>
 </html>
